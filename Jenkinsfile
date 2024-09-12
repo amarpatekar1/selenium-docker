@@ -9,13 +9,25 @@ pipeline {
         }
         stage('Build Image') {
             steps {
-                sh "docker build -t=kubeamarap/selenium ."
+                sh "docker build -t=kubeamarap/selenium:latest ."
             }
         }
         stage('Push Image') {
-            steps {
-                sh "docker push kubeamarap/selenium"
+            environment{
+                DOCKER_HUB = credentials('dockerhub-creds')
             }
+            steps {
+                sh 'echo ${DOCKER_HUB_PSW} | docker login -u ${DOCKER_HUB_USR} --password-stdin'
+                sh 'docker push kubeamarap/selenium:latest'
+                sh "docker tag kubeamarap/selenium:latest kubeamarap/selenium:${env.BUILD_NUMBER}"
+                sh "docker push kubeamarap/selenium:${env.BUILD_NUMBER}"
+            }
+        }
+    }
+
+    post {
+        always {
+            sh "docker logout"
         }
     }
 
